@@ -8,6 +8,7 @@ use spl_tlv_account_resolution::{
 use crate::ID;
 
 #[derive(Accounts)]
+#[instruction(address: Pubkey)]
 pub struct InitializeExtraAccountMetaList<'info> {
     #[account(mut)]
     payer: Signer<'info>,
@@ -18,7 +19,7 @@ pub struct InitializeExtraAccountMetaList<'info> {
         seeds = [b"extra-account-metas", mint.key().as_ref()],
         bump,
         space = ExtraAccountMetaList::size_of(
-            InitializeExtraAccountMetaList::extra_account_metas()?.len()
+            InitializeExtraAccountMetaList::extra_account_metas(address)?.len()
         ).unwrap(),
         payer = payer
     )]
@@ -28,10 +29,12 @@ pub struct InitializeExtraAccountMetaList<'info> {
 }
 
 impl<'info> InitializeExtraAccountMetaList<'info> {
-    pub fn extra_account_metas() -> Result<Vec<ExtraAccountMeta>> {
+    pub fn extra_account_metas(
+        address: Pubkey
+    ) -> Result<Vec<ExtraAccountMeta>> {
         // Derive the whitelist PDA using our program ID
         let (whitelist_pda, _bump) = Pubkey::find_program_address(
-            &[b"whitelist"],
+            &[b"whitelist", address.as_ref()],
             &ID
         );
         
