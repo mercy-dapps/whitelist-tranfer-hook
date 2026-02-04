@@ -19,7 +19,6 @@ use anchor_spl::{
 use crate::state::Whitelist;
 
 #[derive(Accounts)]
-#[instruction(address: Pubkey)]
 pub struct TransferHook<'info> {
     #[account(
         token::mint = mint, 
@@ -40,7 +39,7 @@ pub struct TransferHook<'info> {
     )]
     pub extra_account_meta_list: UncheckedAccount<'info>,
     #[account(
-        seeds = [b"whitelist", address.as_ref()], 
+        seeds = [b"whitelist", owner.key().as_ref()], 
         bump = whitelist.bump,
     )]
     pub whitelist: Account<'info, Whitelist>,

@@ -60,21 +60,17 @@ describe("whitelist-transfer-hook", () => {
       program.programId,
     );
 
-  const whitelistConfig = anchor.web3.PublicKey.findProgramAddressSync(
-    [Buffer.from("whitelist_config")],
-    program.programId,
-  )[0];
-
-  const randomAddress = anchor.web3.Keypair.generate();  // to add/remove from whitelist
+  const randomAddress = anchor.web3.Keypair.generate(); // to add/remove from whitelist
+  const amount = new anchor.BN(100_000_000_000); // 100 SOL
 
   const whitelist = anchor.web3.PublicKey.findProgramAddressSync(
-    [Buffer.from("whitelist"), provider.publicKey.toBuffer()],
+    [Buffer.from("whitelist"), randomAddress.publicKey.toBuffer()],
     program.programId,
   )[0];
 
   it("Initializes the Whitelist", async () => {
     const tx = await program.methods
-      .initializeWhitelistConfig()
+      .initializeWhitelist(randomAddress.publicKey)
       .accounts({
         admin: provider.publicKey,
       })
@@ -84,21 +80,9 @@ describe("whitelist-transfer-hook", () => {
     console.log("Transaction signature:", tx);
   });
 
-  it("Add user to whitelist", async () => {
-    const tx = await program.methods
-      .addToWhitelist(randomAddress.publicKey)
-      .accounts({
-        admin: provider.publicKey,
-      })
-      .rpc();
-
-    console.log("\nUser added to whitelist:", provider.publicKey.toBase58());
-    console.log("Transaction signature:", tx);
-  });
-
   it("Remove user to whitelist", async () => {
     const tx = await program.methods
-      .removeFromWhitelist(randomAddress.publicKey)
+      .removeWhitelist(randomAddress.publicKey)
       .accounts({
         admin: provider.publicKey,
       })
@@ -111,7 +95,7 @@ describe("whitelist-transfer-hook", () => {
     console.log("Transaction signature:", tx);
   });
 
-  it("Create Mint Account with Transfer Hook Extension", async () => {
+  it.skip("Create Mint Account with Transfer Hook Extension", async () => {
     const extensions = [ExtensionType.TransferHook];
     const mintLen = getMintLen(extensions);
     const lamports =
@@ -159,7 +143,21 @@ describe("whitelist-transfer-hook", () => {
     console.log("\nTransaction Signature: ", txSig);
   });
 
-  it("Create Token Accounts and Mint Tokens", async () => {
+  it("create mint", async () => {
+    const tx = await program.methods
+      .mintToken(amount)
+      .accounts({
+        user: provider.publicKey,
+        mint: mint2022.publicKey,
+        tokenProgram: TOKEN_2022_PROGRAM_ID,
+      })
+      .signers([mint2022])
+      .rpc();
+
+    console.log("Transaction signature:", tx);
+  });
+
+  it.skip("Create Token Accounts and Mint Tokens", async () => {
     // 100 tokens
     const amount = 100 * 10 ** 9;
 
@@ -203,7 +201,7 @@ describe("whitelist-transfer-hook", () => {
   // Account to store extra accounts required by the transfer hook instruction
   it("Create ExtraAccountMetaList Account", async () => {
     const initializeExtraAccountMetaListInstruction = await program.methods
-      .initializeTransferHook(randomAddress.publicKey)
+      .initializeTransferHook()
       .accounts({
         payer: wallet.publicKey,
         mint: mint2022.publicKey,
